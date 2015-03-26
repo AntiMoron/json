@@ -1,8 +1,9 @@
 #ifndef JSONNODE_HPP
 #define JSONNODE_HPP
 
-#include"config.hpp"
-#include"JSON_TYPE.hpp"
+#include "config.hpp"
+#include "JSON_TYPE.hpp"
+#include "MyException.hpp"
 #include<vector>
 #include<string>
 #include<iostream>
@@ -85,7 +86,14 @@ namespace MEOJ
 		{
 			this->key = key;
 		}
-
+		void setValue(std::vector<unsigned char> value)
+		{
+			this->value = value;
+		}
+		const std::vector<unsigned char> getValue() const
+		{
+			return value;
+		}
         const bool delChild(int index)
         {
             if(index < 0 || index >= int(children.size()))
@@ -103,15 +111,17 @@ namespace MEOJ
             child->parent = this;
             return true;
         }
-
-        //根据字符串解析当前节点的json数据类型
-        const JSON_TYPE parseJsonType(const std::string& context)
+        const bool addChild(const std::vector<JsonNode*>& child)
         {
-			//如果已经处理过了，直接返回值
-        	if(jsonType != JSON_UNKNOWN)
-			{
-				return jsonType;
-			}
+			if(child.empty())
+				return false;
+			children = child;
+			return true;
+        }
+        //根据字符串解析当前节点的json数据类型
+		static const JSON_TYPE parseJsonType(const std::string& context)
+        {
+			JSON_TYPE result;
 			//判断json数据类型
             std::string::size_type i;
 			int counter = 0;
@@ -130,18 +140,22 @@ namespace MEOJ
                   context[i] == '\r')
                 i++;
             if(context[i] >= '0' && context[i] <= '9')
-                jsonType = JSON_NUMERIC;
+                result = JSON_NUMERIC;
             else if(context[i] == '[')
-                jsonType = JSON_ARRAY;
+                result = JSON_ARRAY;
             else if(context[i] == '{')
-                jsonType = JSON_OBJECT;
+                result = JSON_OBJECT;
             else if(context[i] == '\"')
-                jsonType = JSON_STRING;
+                result = JSON_STRING;
             else if(context[i] == 't' || context[i] == 'f')
-                jsonType = JSON_BOOLEAN;
+                result = JSON_BOOLEAN;
 			//此时应该为错误数据类型
-            else jsonType = JSON_ERROR;
-            return jsonType;
+            else throw MyException("文件有问题你丫脑子有病吧！！！你知不知道姐姐写这个多蛋疼！！！");
+            return result;
+        }
+        void setJsonType(JSON_TYPE type)
+        {
+			jsonType = type;
         }
         //返回当前节点的json数据类型
         const JSON_TYPE getJsonType()
@@ -159,7 +173,7 @@ namespace MEOJ
     private:
         std::string key;
         std::vector<JsonNode*>children;
-        std::vector<unsigned char>value;
+        std::vector<unsigned char> value;
         JSON_TYPE jsonType;
         JsonNode* parent;
     };
